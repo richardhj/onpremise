@@ -5,17 +5,19 @@ on:
   # is not against master).
   push:
     branches:
-    - "master"
-    - "releases/**"
+      - "master"
+      - "releases/**"
   pull_request:
 env:
   DOCKER_COMPOSE_VERSION: 1.24.1
 jobs:
   test:
-    runs-on: ubuntu-16.04
-    name: "test"
+    strategy:
+      matrix:
+        py2: ["", "1"]
+    runs-on: ubuntu-18.04
+    name: "test${{ matrix.py2 == '1' && ' PY2' || ''}}"
     steps:
-
       - name: Pin docker-compose
         run: |
           sudo rm /usr/local/bin/docker-compose
@@ -27,11 +29,15 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install and test
+        env:
+          COMPOSE_PARALLEL_LIMIT: 50
+          COMPOSE_HTTP_TIMEOUT: 450
+          SENTRY_PYTHON2: ${{ matrix.py2 == '1' || '' }}
         run: |
           ./install.sh
-          docker-compose run --rm web createuser --superuser --email test@example.com --password test123TEST
-          docker-compose up -d
-          printf "Waiting for Sentry to be up"; timeout 60 bash -c 'until $(curl -Isf -o /dev/null http://localhost:9000); do printf '.'; sleep 0.5; done'
+          ./test.sh
+          printf "Testing in-place upgrade"
+          ./install.sh --minimize-downtime
           ./test.sh
 
       - name: Inspect failure

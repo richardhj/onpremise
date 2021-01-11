@@ -1,4 +1,4 @@
-minVersion: "0.10.0"
+minVersion: "0.14.0"
 github:
   owner: getsentry
   repo: onpremise
@@ -8,8 +8,5 @@ artifactProvider:
   name: none
 statusProvider:
   name: github
-  config:
-    contexts:
-      - 'Travis CI - Branch'
 targets:
   - name: github
